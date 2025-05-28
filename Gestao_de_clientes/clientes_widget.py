@@ -1,9 +1,9 @@
 from functools import partial
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem,
-    QLabel, QLineEdit, QPushButton, QHBoxLayout, QMessageBox
+    QLabel, QLineEdit, QPushButton, QHBoxLayout, QMessageBox,
+    QDialog, QFormLayout
 )
-
 import sqlite3
 
 class ClientesWidget(QWidget):
@@ -11,7 +11,7 @@ class ClientesWidget(QWidget):
         super().__init__()
         layout = QVBoxLayout()
 
-        # 🔍 Linha de filtros lado a lado
+        # 🔍 Linha de filtros
         filtro_layout = QHBoxLayout()
 
         self.nome_input = QLineEdit(); self.nome_input.setPlaceholderText("Nome")
@@ -27,17 +27,13 @@ class ClientesWidget(QWidget):
         self.btn_pesquisar = QPushButton("🔍 Pesquisar")
         self.btn_pesquisar.clicked.connect(self.filtrar_dados)
 
-        # Adiciona todos os campos e botão ao layout horizontal
-        filtro_layout.addWidget(self.nome_input)
-        filtro_layout.addWidget(self.usuario_input)
-        filtro_layout.addWidget(self.senha_input)
-        filtro_layout.addWidget(self.email_input)
-        filtro_layout.addWidget(self.data_criacao_input)
-        filtro_layout.addWidget(self.expiracao_input)
-        filtro_layout.addWidget(self.status_input)
-        filtro_layout.addWidget(self.telas_input)
-        filtro_layout.addWidget(self.criado_por_input)
-        filtro_layout.addWidget(self.btn_pesquisar)
+        # Adiciona todos os campos ao layout de filtro
+        for widget in [
+            self.nome_input, self.usuario_input, self.senha_input,
+            self.email_input, self.data_criacao_input, self.expiracao_input,
+            self.status_input, self.telas_input, self.criado_por_input, self.btn_pesquisar
+        ]:
+            filtro_layout.addWidget(widget)
 
         # 🧾 Tabela
         self.tabela = QTableWidget()
@@ -70,7 +66,7 @@ class ClientesWidget(QWidget):
             dados = cursor.fetchall()
             conn.close()
 
-            colunas = ["Nome", "Usuário", "Senha", "Email", "Data Criação", "Expiração", "Status", "Telas", "Criado por", "Excluir"]
+            colunas = ["Nome", "Usuário", "Senha", "Email", "Data Criação", "Expiração", "Status", "Telas", "Criado por", "Ações"]
             self.tabela.setColumnCount(len(colunas))
             self.tabela.setRowCount(len(dados))
             self.tabela.setHorizontalHeaderLabels(colunas)
@@ -79,16 +75,26 @@ class ClientesWidget(QWidget):
                 for j, valor in enumerate(linha):
                     self.tabela.setItem(i, j, QTableWidgetItem(str(valor)))
 
-                # Botão de excluir na última coluna
+                # Botões de editar e excluir
+                btn_editar = QPushButton("✏️ Editar")
+                btn_editar.clicked.connect(partial(self.editar_linha, i))
+
                 btn_excluir = QPushButton("🗑️ Excluir")
                 btn_excluir.clicked.connect(partial(self.excluir_linha, i))
-                self.tabela.setCellWidget(i, len(colunas) - 1, btn_excluir)
+
+                botoes_layout = QHBoxLayout()
+                botoes_layout.addWidget(btn_editar)
+                botoes_layout.addWidget(btn_excluir)
+
+                widget_botoes = QWidget()
+                widget_botoes.setLayout(botoes_layout)
+
+                self.tabela.setCellWidget(i, len(colunas) - 1, widget_botoes)
 
             self.tabela.resizeColumnsToContents()
 
         except Exception as e:
             print(f"Erro ao carregar dados: {e}")
-
 
     def filtrar_dados(self):
         filtros = {
@@ -127,5 +133,47 @@ class ClientesWidget(QWidget):
             except Exception as e:
                 print(f"Erro ao excluir: {e}")
 
-        
+    def editar_linha(self, row):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Editar Cliente")
+        layout = QFormLayout()
 
+        campos = ["nome", "usuario", "senha", "email", "data_criacao", "expiracao", "status", "telas", "criado_por"]
+        inputs = {}
+
+        for i, campo in enumerate(campos):
+            valor = self.tabela.item(row, i).text()
+            entrada = QLineEdit(valor)
+            inputs[campo] = entrada
+            layout.addRow(campo.capitalize(), entrada)
+
+        btn_salvar = QPushButton("💾 Salvar")
+        btn_salvar.clicked.connect(lambda: self.salvar_edicao(row, inputs, dialog))
+        layout.addRow(btn_salvar)
+
+        dialog.setLayout(layout)
+        dialog.exec()
+
+    def salvar_edicao(self, row, inputs, dialog):
+        try:
+            dados = {campo: inputs[campo].text().strip() for campo in inputs}
+
+            conn = sqlite3.connect("usuarios.db")
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE usuarios
+                SET nome = ?, senha = ?, email = ?, data_criacao = ?, expiracao = ?, status = ?, telas = ?, criado_por = ?
+                WHERE usuario = ?
+            """, (
+                dados["nome"], dados["senha"], dados["email"], dados["data_criacao"],
+                dados["expiracao"], dados["status"], dados["telas"], dados["criado_por"],
+                dados["usuario"]
+            ))
+            conn.commit()
+            conn.close()
+
+            self.carregar_dados()
+            dialog.accept()
+
+        except Exception as e:
+            print(f"Erro ao salvar edição: {e}")

@@ -1,36 +1,27 @@
-import requests
-from bs4 import BeautifulSoup
-import sqlite3
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import time
+import json
 
-# Configurações
-url_login = 'https://cms.xcsdx.online/'  # URL de login
-url_data = 'https://cms.xcsdx.online/gerenciador/usuario-iptv'  # URL para scraping
-username = 'vinirabelo'
-password = '25071123'
+# Configura o Selenium para se conectar ao Chrome já aberto
+options = Options()
+options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
 
-# Iniciar uma sessão
-session = requests.Session()
+# Inicializa o WebDriver (usa o Chrome já aberto!)
+driver = webdriver.Chrome(options=options)
 
-# Realizar o login
-login_payload = {
-    'username': username,
-    'password': password
-}
+# Acesse a URL desejada (já logado)
+driver.get("https://cms.xcsdx.online/gerenciador/usuario-iptv")  # ou a página onde a tabela está
 
-# Enviar a requisição de login
-session.post(url_login, data=login_payload)
+time.sleep(3)  # Espera a tabela carregar
 
-# Acessar a página de dados
-response = session.get(url_data)
+# Encontra todas as linhas da tabela
+rows = driver.find_elements("css selector", "table tbody tr")
 
-# Analisar o conteúdo da página
-soup = BeautifulSoup(response.text, 'html.parser')
-
-# Extrair dados (exemplo: nomes de usuários)
 usuarios = []
-for row in soup.select('table tbody tr'):
-    cols = row.find_all('td')
-    if cols:
+for row in rows:
+    cols = row.find_elements("tag name", "td")
+    if len(cols) >= 10:
         usuario = {
             'nome': cols[1].text.strip(),
             'usuario': cols[2].text.strip(),
@@ -44,34 +35,8 @@ for row in soup.select('table tbody tr'):
         }
         usuarios.append(usuario)
 
-# Conectar ao banco de dados SQLite
-conn = sqlite3.connect('usuarios.db')
-c = conn.cursor()
+# Salva os dados em um arquivo JSON
+with open("usuarios_extraidos.json", "w", encoding="utf-8") as f:
+    json.dump(usuarios, f, ensure_ascii=False, indent=4)
 
-# Criar tabela se não existir
-c.execute('''
-    CREATE TABLE IF NOT EXISTS usuarios (
-        nome TEXT,
-        usuario TEXT,
-        senha TEXT,
-        email TEXT,
-        data_criacao TEXT,
-        expiracao TEXT,
-        status TEXT,
-        telas TEXT,
-        criado_por TEXT
-    )
-''')
-
-# Inserir dados no banco de dados
-for usuario in usuarios:
-    c.execute('''
-        INSERT INTO usuarios (nome, usuario, senha, email, data_criacao, expiracao, status, telas, criado_por)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (usuario['nome'], usuario['usuario'], usuario['senha'], usuario['email'], usuario['data_criacao'], usuario['expiracao'], usuario['status'], usuario['telas'], usuario['criado_por']))
-
-# Salvar (commit) as mudanças e fechar a conexão
-conn.commit()
-conn.close()
-
-print("Dados extraídos e armazenados com sucesso!")
+print(f"[✓] {len(usuarios)} usuários extraídos com sucesso!")
