@@ -94,7 +94,7 @@ class MainWindow(QWidget):
             'https://cms.xcsdx.online/'
         )
         subprocess.Popen(comando, shell=True)
-        self.label_conteudo.setText("🌐 Painel aberto no Chrome. Faça o login manualmente.")
+        self.label_conteudo.setText("🌐 Painel aberto no Chrome. Faça o login manualmente e clique em Raspar dados.")
 
 
     def executar_raspar_dados(self):
@@ -103,7 +103,7 @@ class MainWindow(QWidget):
             import scraping_e_insercao  # você pode separar esse script em um arquivo .py
 
         threading.Thread(target=tarefa).start()
-        self.label_conteudo.setText("⏳ Raspando dados... aguarde.")
+        self.label_conteudo.setText("📥 Dados raspados e inseridos no banco!")
 
 
 
