@@ -2,7 +2,11 @@ from PyQt6.QtWidgets import (
     QWidget, QLabel, QVBoxLayout, QPushButton, QHBoxLayout, QFrame
 )
 from PyQt6.QtCore import Qt
-from cadastro_widget import CadastroWidget  # Agora é um widget, não uma janela
+from PyQt6.QtGui import QIcon
+import subprocess
+import threading
+
+from cadastro_widget import CadastroWidget
 from clientes_widget import ClientesWidget
 
 
@@ -13,7 +17,6 @@ class MainWindow(QWidget):
         self.setWindowTitle("Gestor de Clientes")
         self.setGeometry(100, 100, 1000, 600)
 
-        # Layout principal
         main_layout = QHBoxLayout()
 
         # 📌 MENU
@@ -29,17 +32,22 @@ class MainWindow(QWidget):
         btn_cadastros = QPushButton("📋 Cadastrar")
         btn_clientes = QPushButton("👥 Clientes")
         btn_config = QPushButton("⚙️ Configurações")
+        btn_abrir_painel = QPushButton("🌐 Abrir Painel")
+        btn_raspar_dados = QPushButton("📥 Raspar Dados")
         btn_logout = QPushButton("🚪 Sair")
-        btn_logout.clicked.connect(self.sair)
 
         btn_cadastros.clicked.connect(self.abrir_cadastro)
         btn_clientes.clicked.connect(self.abrir_clientes)
-
+        btn_abrir_painel.clicked.connect(self.abrir_painel)
+        btn_raspar_dados.clicked.connect(self.executar_raspar_dados)
+        btn_logout.clicked.connect(self.sair)
 
         menu_layout.addWidget(self.label_usuario)
         menu_layout.addWidget(btn_cadastros)
         menu_layout.addWidget(btn_clientes)
         menu_layout.addWidget(btn_config)
+        menu_layout.addWidget(btn_abrir_painel)
+        menu_layout.addWidget(btn_raspar_dados)
         menu_layout.addStretch()
         menu_layout.addWidget(btn_logout)
 
@@ -56,7 +64,6 @@ class MainWindow(QWidget):
         self.content_layout.addWidget(self.label_conteudo)
         self.content_frame.setLayout(self.content_layout)
 
-        # Adiciona ao layout principal
         main_layout.addWidget(menu_frame)
         main_layout.addWidget(self.content_frame)
 
@@ -66,22 +73,37 @@ class MainWindow(QWidget):
         self.close()
 
     def abrir_cadastro(self):
-        # Limpa o conteúdo atual
-        for i in reversed(range(self.content_layout.count())):
-            widget = self.content_layout.itemAt(i).widget()
-            if widget is not None:
-                widget.setParent(None)
-
-        # Adiciona o novo widget de cadastro
+        self.limpar_conteudo()
         self.content_layout.addWidget(CadastroWidget())
 
     def abrir_clientes(self):
-    # Limpa o conteúdo atual
+        self.limpar_conteudo()
+        self.content_layout.addWidget(ClientesWidget())
+
+    def limpar_conteudo(self):
         for i in reversed(range(self.content_layout.count())):
             widget = self.content_layout.itemAt(i).widget()
-            if widget is not None:
+            if widget:
                 widget.setParent(None)
 
-        # Adiciona a tabela de clientes
-        self.content_layout.addWidget(ClientesWidget())
+    def abrir_painel(self):
+        comando = (
+            r'"C:\Program Files\Google\Chrome\Application\chrome.exe" '
+            '--remote-debugging-port=9222 '
+            '--user-data-dir="C:\\selenium-profile" '
+            'https://cms.xcsdx.online/'
+        )
+        subprocess.Popen(comando, shell=True)
+        self.label_conteudo.setText("🌐 Painel aberto no Chrome. Faça o login manualmente.")
+
+
+    def executar_raspar_dados(self):
+        # Executa o script de raspagem e inserção em uma thread separada
+        def tarefa():
+            import scraping_e_insercao  # você pode separar esse script em um arquivo .py
+
+        threading.Thread(target=tarefa).start()
+        self.label_conteudo.setText("⏳ Raspando dados... aguarde.")
+
+
 
