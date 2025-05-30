@@ -1,4 +1,3 @@
-# scraping_e_insercao.py
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import time
@@ -33,17 +32,19 @@ def raspar_e_inserir():
             }
             usuarios.append(usuario)
 
+    # Salva como JSON para registro
     with open("usuarios_extraidos.json", "w", encoding="utf-8") as f:
         json.dump(usuarios, f, ensure_ascii=False, indent=4)
 
-    # Inserção no banco
+    # Conecta ao banco SQLite
     conn = sqlite3.connect("usuarios.db")
     cursor = conn.cursor()
 
+    # Cria a tabela com chave primária
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS usuarios (
         nome TEXT,
-        usuario TEXT,
+        usuario TEXT PRIMARY KEY,
         senha TEXT,
         email TEXT,
         data_criacao TEXT,
@@ -54,6 +55,7 @@ def raspar_e_inserir():
     )
     """)
 
+    # Inserção ou atualização
     for u in usuarios:
         cursor.execute("""
             INSERT INTO usuarios (
@@ -61,6 +63,15 @@ def raspar_e_inserir():
                 data_criacao, expiracao, status,
                 telas, criado_por
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(usuario) DO UPDATE SET
+                nome=excluded.nome,
+                senha=excluded.senha,
+                email=excluded.email,
+                data_criacao=excluded.data_criacao,
+                expiracao=excluded.expiracao,
+                status=excluded.status,
+                telas=excluded.telas,
+                criado_por=excluded.criado_por
         """, (
             u['nome'], u['usuario'], u['senha'], u['email'],
             u['data_criacao'], u['expiracao'], u['status'],
@@ -69,7 +80,7 @@ def raspar_e_inserir():
 
     conn.commit()
     conn.close()
-    print(f"[✓] {len(usuarios)} usuários inseridos no banco com sucesso!")
+    print(f"[✓] {len(usuarios)} usuários inseridos/atualizados no banco com sucesso!")
 
 if __name__ == "__main__":
     raspar_e_inserir()

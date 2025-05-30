@@ -13,7 +13,7 @@ cursor = conn.cursor()
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS usuarios (
     nome TEXT,
-    usuario TEXT,
+    usuario TEXT PRIMARY KEY,
     senha TEXT,
     email TEXT,
     data_criacao TEXT,
@@ -32,11 +32,21 @@ for u in usuarios:
             data_criacao, expiracao, status,
             telas, criado_por
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(usuario) DO UPDATE SET
+            nome=excluded.nome,
+            senha=excluded.senha,
+            email=excluded.email,
+            data_criacao=excluded.data_criacao,
+            expiracao=excluded.expiracao,
+            status=excluded.status,
+            telas=excluded.telas,
+            criado_por=excluded.criado_por
     """, (
         u['nome'], u['usuario'], u['senha'], u['email'],
         u['data_criacao'], u['expiracao'], u['status'],
         u['telas'], u['criado_por']
     ))
+
 
 conn.commit()
 conn.close()

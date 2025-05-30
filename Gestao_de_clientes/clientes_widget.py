@@ -77,10 +77,10 @@ class ClientesWidget(QWidget):
 
                 # Botões de editar e excluir
                 btn_editar = QPushButton("✏️ Editar")
-                btn_editar.clicked.connect(partial(self.editar_linha, i))
+                btn_editar.clicked.connect(lambda _, b=btn_editar: self.editar_linha(b))  
 
                 btn_excluir = QPushButton("🗑️ Excluir")
-                btn_excluir.clicked.connect(partial(self.excluir_linha, i))
+                btn_excluir.clicked.connect(lambda _, b=btn_excluir: self.excluir_linha(b))  
 
                 botoes_layout = QHBoxLayout()
                 botoes_layout.addWidget(btn_editar)
@@ -112,8 +112,12 @@ class ClientesWidget(QWidget):
         }
         self.carregar_dados(filtros=filtros)
 
-    def excluir_linha(self, row):
-        usuario = self.tabela.item(row, 1).text()  # coluna 1 = usuário
+    def excluir_linha(self, botao):
+        row = self.tabela.indexAt(botao.parent().pos()).row()
+        if row < 0:
+            return
+
+        usuario = self.tabela.item(row, 1).text()
 
         confirmacao = QMessageBox.question(
             self,
@@ -130,12 +134,18 @@ class ClientesWidget(QWidget):
                 conn.commit()
                 conn.close()
 
-                self.tabela.removeRow(row)  # remove da interface
+                self.carregar_dados()
 
             except Exception as e:
                 print(f"Erro ao excluir: {e}")
 
-    def editar_linha(self, row):
+
+
+    def editar_linha(self, botao):
+        row = self.tabela.indexAt(botao.parent().pos()).row()
+        if row < 0:
+            return
+
         dialog = QDialog(self)
         dialog.setWindowTitle("Editar Cliente")
         layout = QFormLayout()
@@ -150,13 +160,17 @@ class ClientesWidget(QWidget):
             layout.addRow(campo.capitalize(), entrada)
 
         btn_salvar = QPushButton("💾 Salvar")
-        btn_salvar.clicked.connect(lambda: self.salvar_edicao(row, inputs, dialog))
+        usuario_original = self.tabela.item(row, 1).text()
+        btn_salvar.clicked.connect(lambda: self.salvar_edicao(row, inputs, dialog, usuario_original))
+
         layout.addRow(btn_salvar)
 
         dialog.setLayout(layout)
         dialog.exec()
 
-    def salvar_edicao(self, row, inputs, dialog):
+
+
+    def salvar_edicao(self, row, inputs, dialog, usuario_original):
         try:
             dados = {campo: inputs[campo].text().strip() for campo in inputs}
 
@@ -164,12 +178,12 @@ class ClientesWidget(QWidget):
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE usuarios
-                SET nome = ?, senha = ?, email = ?, data_criacao = ?, expiracao = ?, status = ?, telas = ?, criado_por = ?
+                SET nome = ?, usuario = ?, senha = ?, email = ?, data_criacao = ?, expiracao = ?, status = ?, telas = ?, criado_por = ?
                 WHERE usuario = ?
             """, (
-                dados["nome"], dados["senha"], dados["email"], dados["data_criacao"],
-                dados["expiracao"], dados["status"], dados["telas"], dados["criado_por"],
-                dados["usuario"]
+                dados["nome"], dados["usuario"], dados["senha"], dados["email"],
+                dados["data_criacao"], dados["expiracao"], dados["status"],
+                dados["telas"], dados["criado_por"], usuario_original
             ))
             conn.commit()
             conn.close()
@@ -179,3 +193,4 @@ class ClientesWidget(QWidget):
 
         except Exception as e:
             print(f"Erro ao salvar edição: {e}")
+
