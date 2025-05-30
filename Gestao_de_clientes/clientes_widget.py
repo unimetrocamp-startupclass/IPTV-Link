@@ -90,6 +90,8 @@ class ClientesWidget(QWidget):
                 widget_botoes.setLayout(botoes_layout)
 
                 self.tabela.setCellWidget(i, len(colunas) - 1, widget_botoes)
+                self.tabela.setRowHeight(i, 45)
+
 
             self.tabela.resizeColumnsToContents()
 

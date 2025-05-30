@@ -1,21 +1,26 @@
 from PyQt6.QtWidgets import (
-    QWidget, QLabel, QVBoxLayout, QPushButton, QHBoxLayout, QFrame
+    QWidget, QLabel, QVBoxLayout, QPushButton, QHBoxLayout, QFrame, QSpacerItem, QSizePolicy
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 import subprocess
 import threading
 
+from main_config import ConfigWindow
 from cadastro_widget import CadastroWidget
 from clientes_widget import ClientesWidget
+from abrir_painel_widget import AbrirPainelWidget
+from raspar_dados_widget import RasparDadosWidget
+
 
 
 class MainWindow(QWidget):
     def __init__(self, usuario_nome="Usuário"):
         super().__init__()
 
-        self.setWindowTitle("Gestor de Clientes")
+        self.setWindowTitle("UP - Gestor de Clientes")
         self.setGeometry(100, 100, 1000, 600)
+        self.showMaximized()
 
         main_layout = QHBoxLayout()
 
@@ -41,6 +46,8 @@ class MainWindow(QWidget):
         btn_abrir_painel.clicked.connect(self.abrir_painel)
         btn_raspar_dados.clicked.connect(self.executar_raspar_dados)
         btn_logout.clicked.connect(self.sair)
+        btn_config.clicked.connect(self.abrir_configuracoes)
+
 
         menu_layout.addWidget(self.label_usuario)
         menu_layout.addWidget(btn_cadastros)
@@ -53,7 +60,6 @@ class MainWindow(QWidget):
 
         menu_frame.setLayout(menu_layout)
 
-        # 📌 CONTEÚDO DINÂMICO
         self.content_frame = QFrame(self)
         self.content_frame.setStyleSheet("background-color: #f4f4f4;")
         self.content_layout = QVBoxLayout()
@@ -80,6 +86,10 @@ class MainWindow(QWidget):
         self.limpar_conteudo()
         self.content_layout.addWidget(ClientesWidget())
 
+    def abrir_configuracoes(self):
+        self.limpar_conteudo()
+        self.content_layout.addWidget(ConfigWindow())     
+
     def limpar_conteudo(self):
         for i in reversed(range(self.content_layout.count())):
             widget = self.content_layout.itemAt(i).widget()
@@ -87,23 +97,16 @@ class MainWindow(QWidget):
                 widget.setParent(None)
 
     def abrir_painel(self):
-        comando = (
-            r'"C:\Program Files\Google\Chrome\Application\chrome.exe" '
-            '--remote-debugging-port=9222 '
-            '--user-data-dir="C:\\selenium-profile" '
-            'https://cms.xcsdx.online/'
-        )
-        subprocess.Popen(comando, shell=True)
-        self.label_conteudo.setText("🌐 Painel aberto no Chrome. Faça o login manualmente e clique em Raspar dados.")
-
+        self.limpar_conteudo()
+        self.content_layout.addWidget(AbrirPainelWidget())
 
     def executar_raspar_dados(self):
-        # Executa o script de raspagem e inserção em uma thread separada
-        def tarefa():
-            import scraping_e_insercao  # você pode separar esse script em um arquivo .py
+        self.limpar_conteudo()
+        self.content_layout.addWidget(RasparDadosWidget())
 
-        threading.Thread(target=tarefa).start()
-        self.label_conteudo.setText("📥 Dados raspados e inseridos no banco!")
+
+
+
 
 
 
