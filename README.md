@@ -145,7 +145,7 @@ Automatizar o envio de mensagens via WhatsApp utilizando a WhatsApp Business API
 
 ### Linkedin do Projeto
 
-> Inserir link da página no LinkedIn com logo do LTD, título do projeto, resumo, integrantes, professor e link para o GitHub.
+(https://www.linkedin.com/in/pedro-adolfo-custodio-maia/details/projects/)
 
 ---
 
