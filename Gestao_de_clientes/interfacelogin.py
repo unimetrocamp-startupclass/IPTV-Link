@@ -21,11 +21,10 @@ class LoginWindow(QWidget):
         self.showMaximized()
 
     def setup_ui(self):
-        # Layout principal da janela
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(100, 100, 100, 20)
 
-        # Título no topo
+        # Título
         titulo_label = QLabel("⬆️ UP Gestores")
         titulo_label.setStyleSheet("font-size: 28px; font-weight: bold; color: #333;")
         titulo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -52,11 +51,13 @@ class LoginWindow(QWidget):
         self.label = QLabel("Usuário:")
         self.label.setStyleSheet("font-size: 14px;")
         self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("Usuario")  # <-- Placeholder aqui
 
         self.label2 = QLabel("Senha:")
         self.label2.setStyleSheet("font-size: 14px;")
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password_input.setPlaceholderText("Digite sua senha")  # <-- Placeholder aqui
 
         self.login_button = QPushButton("Entrar")
         self.login_button.clicked.connect(self.verificar_login)
