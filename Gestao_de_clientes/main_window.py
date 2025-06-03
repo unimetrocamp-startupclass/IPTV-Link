@@ -1,14 +1,18 @@
 from PyQt6.QtWidgets import (
-    QWidget, QLabel, QVBoxLayout, QPushButton, QHBoxLayout, QFrame
+    QWidget, QLabel, QVBoxLayout, QPushButton, QHBoxLayout, QFrame, QSpacerItem, QSizePolicy
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
+import subprocess
+import threading
 
 from main_config import ConfigWindow
 from cadastro_widget import CadastroWidget
 from clientes_widget import ClientesWidget
 from abrir_painel_widget import AbrirPainelWidget
 from raspar_dados_widget import RasparDadosWidget
-from enviar_mensagem_widget import EnviarMensagemWidget  # Novo widget
+
+
 
 class MainWindow(QWidget):
     def __init__(self, usuario_nome="Usuário"):
@@ -35,51 +39,27 @@ class MainWindow(QWidget):
         btn_config = QPushButton("⚙️ Configurações")
         btn_abrir_painel = QPushButton("🌐 Abrir Painel")
         btn_raspar_dados = QPushButton("📥 Raspar Dados")
-        btn_mensagem = QPushButton("💬 Enviar Mensagem")  # Botão novo
         btn_logout = QPushButton("🚪 Sair")
 
-        # Conectando botões às funções
         btn_cadastros.clicked.connect(self.abrir_cadastro)
         btn_clientes.clicked.connect(self.abrir_clientes)
-        btn_config.clicked.connect(self.abrir_configuracoes)
         btn_abrir_painel.clicked.connect(self.abrir_painel)
         btn_raspar_dados.clicked.connect(self.executar_raspar_dados)
-        btn_mensagem.clicked.connect(self.abrir_mensagem_widget)  # Novo método
         btn_logout.clicked.connect(self.sair)
+        btn_config.clicked.connect(self.abrir_configuracoes)
 
 
-        botao_estilo = """
-            QPushButton {
-                background-color: transparent;
-                color: white;
-                font-size: 14px;
-                padding: 10px;
-                text-align: left;
-            }
-            QPushButton:hover {
-                background-color: #444;
-            }
-        """
-
-        for botao in [btn_cadastros, btn_clientes, btn_config, btn_abrir_painel, btn_raspar_dados, btn_logout]:
-            botao.setStyleSheet(botao_estilo)
-
-
-
-        # Adiciona os botões ao menu
         menu_layout.addWidget(self.label_usuario)
         menu_layout.addWidget(btn_cadastros)
         menu_layout.addWidget(btn_clientes)
         menu_layout.addWidget(btn_config)
         menu_layout.addWidget(btn_abrir_painel)
         menu_layout.addWidget(btn_raspar_dados)
-        menu_layout.addWidget(btn_mensagem)
         menu_layout.addStretch()
         menu_layout.addWidget(btn_logout)
 
         menu_frame.setLayout(menu_layout)
 
-        # 📦 ÁREA DE CONTEÚDO PRINCIPAL
         self.content_frame = QFrame(self)
         self.content_frame.setStyleSheet("background-color: #f4f4f4;")
         self.content_layout = QVBoxLayout()
@@ -90,16 +70,10 @@ class MainWindow(QWidget):
         self.content_layout.addWidget(self.label_conteudo)
         self.content_frame.setLayout(self.content_layout)
 
-        # Layout principal
         main_layout.addWidget(menu_frame)
         main_layout.addWidget(self.content_frame)
-        self.setLayout(main_layout)
 
-    def limpar_conteudo(self):
-        for i in reversed(range(self.content_layout.count())):
-            widget = self.content_layout.itemAt(i).widget()
-            if widget:
-                widget.setParent(None)
+        self.setLayout(main_layout)
 
     def sair(self):
         self.close()
@@ -114,7 +88,13 @@ class MainWindow(QWidget):
 
     def abrir_configuracoes(self):
         self.limpar_conteudo()
-        self.content_layout.addWidget(ConfigWindow())
+        self.content_layout.addWidget(ConfigWindow())     
+
+    def limpar_conteudo(self):
+        for i in reversed(range(self.content_layout.count())):
+            widget = self.content_layout.itemAt(i).widget()
+            if widget:
+                widget.setParent(None)
 
     def abrir_painel(self):
         self.limpar_conteudo()
@@ -124,6 +104,9 @@ class MainWindow(QWidget):
         self.limpar_conteudo()
         self.content_layout.addWidget(RasparDadosWidget())
 
-    def abrir_mensagem_widget(self):  # Novo método
-        self.limpar_conteudo()
-        self.content_layout.addWidget(EnviarMensagemWidget())
+
+
+
+
+
+
